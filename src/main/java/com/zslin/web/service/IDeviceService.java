@@ -14,9 +14,9 @@ import java.util.List;
 
 public interface IDeviceService extends JpaRepository<Device,Integer> {
     /**通过站点号查询设备的信息*/
-    @Query("FROM Device d where d.s_id=:sid")
+ /*   @Query("FROM Device d where d.s_id=:sid")
     List<Device> findDeviceBySId(@Param("sid") Integer sid);
-    /**通过设备号查询设备的状态*/
+    *//**通过设备号查询设备的状态*//*
     @Query("FROM Device d where d.d_id=:did")
-    Device findDeviceBydId(@Param("did") Long did);
+    Device findDeviceBydId(@Param("did") Long did);*/
 }

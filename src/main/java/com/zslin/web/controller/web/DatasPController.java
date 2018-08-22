@@ -2,11 +2,13 @@ package com.zslin.web.controller.web;
 
 
 
+import com.zslin.web.model.Alarm;
+import com.zslin.web.model.Device;
+import com.zslin.web.model.Maintain;
 import com.zslin.web.model.Senddata;
-import com.zslin.web.service.ISenddataService;
+import com.zslin.web.service.*;
 
 
-import com.zslin.web.service.ISenddatasService;
 import net.sf.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,11 +29,18 @@ import java.util.*;
 public class DatasPController {
     @Autowired
     ISenddatasService iSenddatasService;
+    @Autowired
+    IDeviceService iDeviceService;
+    @Autowired
+    IAlarmService iAlarmService;
+    @Autowired
+    IMaintainService iMaintainService;
     @RequestMapping(value = "/datasp",method = RequestMethod.POST)
     public JSONObject handledatas(@RequestBody JSONObject jobj){
-
+        Alarm alarm=this.iAlarmService.findOne(1);
         String id1=jobj.getString("id");
         String id2;
+        Integer target=0;
         if(id1.equals("1")){
             id2="1";
         }else{
@@ -47,12 +56,39 @@ public class DatasPController {
         data.add(jbt.getString("tds1"));
         data.add(jbt.getString("tds2"));*/
        Senddata sd=new Senddata();
+       Device device=this.iDeviceService.findOne(Integer.valueOf(id2));
+       Maintain maintain=new Maintain();
        sd.setD_id(Integer.valueOf(id2));
        sd.setCstds(jbt.getString("tds2"));
+        if (Float.parseFloat(jbt.getString("tds2"))<alarm.getCstdsdown()
+                ||Float.parseFloat(jbt.getString("tds2"))>alarm.getCstdsup()){
+           maintain.setCstds(Float.parseFloat(jbt.getString("tds2")));
+           target=1;
+       }
        sd.setJstds(jbt.getString("tds1"));
+        if (Float.parseFloat(jbt.getString("tds1"))<alarm.getJstdsdown()
+                ||Float.parseFloat(jbt.getString("tds1"))>alarm.getJstdsup()){
+            maintain.setJstds(Float.parseFloat(jbt.getString("tds1")));
+            target=1;
+        }
        sd.setSuwd(jbt.getString("temp"));
+        if (Float.parseFloat(jbt.getString("temp"))<alarm.getSuwddown()
+                ||Float.parseFloat(jbt.getString("temp"))>alarm.getSuwdup()){
+            maintain.setSuwd(Float.parseFloat(jbt.getString("temp")));
+            target=1;
+        }
        sd.setJsll(jbt.getString("flow1"));
+        if (Float.parseFloat(jbt.getString("flow1"))<alarm.getJslldown()
+                ||Float.parseFloat(jbt.getString("flow1"))>alarm.getJsllup()){
+            maintain.setJsll(Float.parseFloat(jbt.getString("flow1")));
+            target=1;
+        }
        sd.setCsll(jbt.getString("flow2"));
+        if (Float.parseFloat(jbt.getString("flow2"))<alarm.getCslldown()
+                ||Float.parseFloat(jbt.getString("flow2"))>alarm.getCsllup()){
+            maintain.setCsll(Float.parseFloat(jbt.getString("flow2")));
+            target=1;
+        }
        sd.setPh("OK");
        sd.setYl("OK");
         sd.setYlv("OK");
@@ -67,6 +103,23 @@ public class DatasPController {
         sd.setSentem( format2.format(new Date()).toString());
 
        this.iSenddatasService.save(sd);
+       if (target==1){
+           if (this.iMaintainService.findByDeviceId(Integer.valueOf(id2))!=null){
+               this.iMaintainService.delete(this.iMaintainService.findByDeviceId(Integer.valueOf(id2)).getId());
+           }
+           maintain.setPh(null);
+           maintain.setYl(null);
+           maintain.setYlv(null);
+           maintain.setZd(null);
+           maintain.setRjy(null);
+           maintain.setYcy(null);
+           maintain.setSuyl(null);
+           maintain.setSentem( format2.format(new Date()).toString());
+           maintain.setDeviceId(Integer.valueOf(id2));
+           maintain.setDevicename(device.getName());
+           maintain.setSitename(device.getSite().getName());
+           this.iMaintainService.save(maintain);
+       }
         //成功
         if(datas.length()!=0){
             tmp.put("msg","Success");
